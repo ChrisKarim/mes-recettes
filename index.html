@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Le Cuisto</title>
+<meta name="theme-color" content="#F4F1EA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111110" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Le Cuisto">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+:root{
+  --bg:#F4F1EA; --surface:#FFFFFF; --ink:#151513; --muted:#77736B; --line:#E4DFD4; --soft:#ECE8DF;
+  --accent:#FF5530; --accent-ink:#FFFFFF;
+  --sauce:#E39B12; --plat:#2E8A5F; --dessert:#DB4C82; --amuse:#5A5CE0;
+  --r:22px; --r-sm:14px;
+  --shadow:0 1px 2px rgba(20,18,10,.05),0 8px 24px -12px rgba(20,18,10,.18);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  --top:env(safe-area-inset-top,0px); --bot:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#111110;--surface:#1C1B19;--ink:#F3F0E8;--muted:#9C978C;--line:#2C2A26;--soft:#24231F;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.7)}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased}
+body{min-height:100vh;overscroll-behavior-y:none}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+a{color:inherit}
+.wrap{max-width:720px;margin:0 auto;padding:calc(var(--top) + 18px) 18px calc(var(--bot) + 110px)}
+
+/* ---------- header ---------- */
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:6px 2px 18px}
+.brand small{display:block;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:4px}
+.brand h1{margin:0;font-size:44px;line-height:.95;letter-spacing:-.045em;font-weight:850}
+.brand h1 span{color:var(--accent)}
+.iconbtn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--surface);box-shadow:var(--shadow)}
+.iconbtn svg{width:22px;height:22px}
+
+.search{position:relative;margin-bottom:14px}
+.search input{width:100%;height:50px;border-radius:16px;border:1px solid var(--line);background:var(--surface);padding:0 16px 0 46px;font-size:16px;outline:none}
+.search input:focus{border-color:var(--ink)}
+.search svg{position:absolute;left:15px;top:14px;width:22px;height:22px;color:var(--muted)}
+
+.chips{display:flex;gap:8px;overflow-x:auto;margin:0 -18px 20px;padding:2px 18px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;height:38px;padding:0 15px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.chip i{width:8px;height:8px;border-radius:50%;background:var(--c,var(--ink))}
+.chip b{font-weight:600;color:var(--muted);font-size:12px}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip.on b{color:inherit;opacity:.6}
+
+/* ---------- grid ---------- */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (min-width:600px){.grid{grid-template-columns:1fr 1fr 1fr}}
+.card{background:var(--surface);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);text-align:left;display:flex;flex-direction:column;transition:transform .15s}
+.card:active{transform:scale(.97)}
+.thumb{position:relative;aspect-ratio:4/3;background:var(--soft);overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.ph{position:absolute;inset:0;display:grid;place-items:center;font-size:64px;font-weight:850;letter-spacing:-.05em;color:#fff;background:var(--c)}
+.ph::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 100% 0%,rgba(255,255,255,.28),transparent 55%)}
+.tag{position:absolute;left:10px;top:10px;height:24px;padding:0 9px;border-radius:999px;background:rgba(255,255,255,.94);color:#151513;font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;letter-spacing:.02em}
+.tag i{width:7px;height:7px;border-radius:50%;background:var(--c)}
+.card .meta{padding:11px 13px 14px}
+.card h3{margin:0;font-size:15px;line-height:1.25;font-weight:700;letter-spacing:-.01em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card p{margin:5px 0 0;font-size:12px;color:var(--muted)}
+
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty .big{font-size:64px;font-weight:850;letter-spacing:-.05em;color:var(--ink);line-height:1}
+.empty p{max-width:300px;margin:14px auto 0;line-height:1.5}
+
+.fab{position:fixed;right:20px;bottom:calc(var(--bot) + 22px);height:60px;padding:0 24px 0 20px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:16px;display:flex;align-items:center;gap:8px;box-shadow:0 12px 30px -8px rgba(255,85,48,.6);z-index:5}
+.fab svg{width:24px;height:24px}
+.fab:active{transform:scale(.96)}
+
+/* ---------- sheets ---------- */
+.sheet{position:fixed;inset:0;background:var(--bg);z-index:20;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:up .28s cubic-bezier(.2,.8,.2,1)}
+@keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.bar{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(var(--top) + 10px) 14px 10px;background:color-mix(in srgb,var(--bg) 85%,transparent);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+.bar .t{font-weight:700;font-size:16px}
+.pill{height:40px;padding:0 16px;border-radius:999px;background:var(--surface);box-shadow:var(--shadow);font-weight:600;font-size:15px;display:inline-flex;align-items:center;gap:6px}
+.pill svg{width:20px;height:20px}
+.pill.dark{background:var(--ink);color:var(--bg)}
+.pill.accent{background:var(--accent);color:#fff;box-shadow:none}
+.body{max-width:720px;margin:0 auto;padding:6px 18px calc(var(--bot) + 40px)}
+
+/* detail */
+.hero{border-radius:var(--r);overflow:hidden;position:relative;aspect-ratio:16/10;background:var(--soft);box-shadow:var(--shadow)}
+.hero img{width:100%;height:100%;object-fit:cover}
+.hero .ph{font-size:110px}
+.play{position:absolute;right:12px;bottom:12px;height:40px;padding:0 14px;border-radius:999px;background:rgba(0,0,0,.72);color:#fff;font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;text-decoration:none;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.play svg{width:16px;height:16px}
+.d-title{font-size:34px;line-height:1.02;letter-spacing:-.04em;font-weight:850;margin:20px 0 10px}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
+.fact{height:30px;padding:0 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px}
+.fact i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.sec{background:var(--surface);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:var(--shadow)}
+.sec h2{margin:0 0 12px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;display:flex;justify-content:space-between;align-items:center}
+.ing{list-style:none;margin:0;padding:0}
+.ing li{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-top:1px solid var(--line);font-size:16px;line-height:1.35}
+.ing li:first-child{border-top:0;padding-top:2px}
+.ing .box{flex:none;width:22px;height:22px;border-radius:7px;border:2px solid var(--line);margin-top:1px;display:grid;place-items:center}
+.ing li.done{color:var(--muted);text-decoration:line-through}
+.ing li.done .box{background:var(--plat);border-color:var(--plat)}
+.ing li.done .box::after{content:"";width:5px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.ing .q{font-weight:700;margin-right:4px}
+.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+.steps li{counter-increment:s;display:grid;grid-template-columns:34px 1fr;gap:12px;padding:12px 0;border-top:1px solid var(--line);font-size:16px;line-height:1.5}
+.steps li:first-child{border-top:0;padding-top:2px}
+.steps li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--ink);color:var(--bg);font-weight:800;font-size:14px;display:grid;place-items:center}
+details.tr summary{list-style:none;cursor:pointer;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;display:flex;justify-content:space-between}
+details.tr summary::-webkit-details-marker{display:none}
+details.tr[open] summary .chev{transform:rotate(180deg)}
+.chev{transition:transform .2s}
+.trtext{margin-top:14px;font-size:14px;line-height:1.65;color:var(--muted);white-space:pre-wrap;max-height:50vh;overflow:auto}
+.danger{color:#D93A2B;font-weight:600;font-size:15px;padding:14px;width:100%;text-align:center}
+
+/* cook mode */
+body.cook .ing li,body.cook .steps li{font-size:21px}
+body.cook .steps li::before{width:36px;height:36px;font-size:16px}
+body.cook .steps li{grid-template-columns:42px 1fr}
+
+/* forms */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 7px 4px}
+.field input,.field textarea,.field select{width:100%;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--surface);padding:14px 15px;font-size:16px;outline:none;-webkit-appearance:none;appearance:none}
+.field textarea{min-height:130px;line-height:1.5;resize:vertical}
+.field input:focus,.field textarea:focus{border-color:var(--ink)}
+.field .hint{font-size:13px;color:var(--muted);margin:7px 4px 0;line-height:1.45}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg button{height:46px;border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--line);font-weight:600;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px}
+.seg button i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.seg button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.urlrow{display:flex;gap:8px}
+.urlrow input{flex:1}
+.urlrow button{flex:none;padding:0 16px;border-radius:var(--r-sm);background:var(--soft);font-weight:600}
+.big-cta{width:100%;height:58px;border-radius:18px;background:var(--accent);color:#fff;font-weight:700;font-size:17px;display:flex;align-items:center;justify-content:center;gap:10px}
+.big-cta:disabled{opacity:.45}
+.ghost-cta{width:100%;height:52px;border-radius:18px;background:var(--surface);border:1px solid var(--line);font-weight:600;font-size:16px;margin-top:10px}
+.add-hero{font-size:34px;line-height:1.02;letter-spacing:-.04em;font-weight:850;margin:12px 0 8px}
+.add-sub{color:var(--muted);line-height:1.5;margin:0 0 24px}
+
+.notice{border-radius:var(--r);padding:16px 18px;margin:18px 0;line-height:1.5;font-size:15px}
+.notice.err{background:color-mix(in srgb,#D93A2B 12%,var(--surface));border:1px solid color-mix(in srgb,#D93A2B 35%,transparent)}
+.notice.err b{display:block;margin-bottom:4px}
+.notice.info{background:var(--surface);border:1px dashed var(--line);color:var(--muted)}
+
+.loader{display:flex;flex-direction:column;align-items:center;text-align:center;padding:40px 10px}
+.pot{width:84px;height:84px;border-radius:50%;background:conic-gradient(var(--accent) 0 25%,var(--sauce) 0 50%,var(--plat) 0 75%,var(--dessert) 0);animation:spin 1.6s linear infinite;-webkit-mask:radial-gradient(circle,transparent 52%,#000 53%);mask:radial-gradient(circle,transparent 52%,#000 53%)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader h3{font-size:22px;letter-spacing:-.02em;margin:22px 0 6px}
+.loader p{color:var(--muted);margin:0;line-height:1.5}
+
+.set-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
+.set-row:first-of-type{border-top:0}
+.ver{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center;margin-top:24px}
+.toast{position:fixed;left:50%;bottom:calc(var(--bot) + 96px);transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:999px;font-weight:600;font-size:14px;z-index:50;animation:up .25s;white-space:nowrap}
+.hidden{display:none!important}
+.modal{position:fixed;inset:0;z-index:60;background:rgba(10,10,8,.45);display:flex;align-items:flex-end;justify-content:center;padding:16px 16px calc(var(--bot) + 16px);animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+.modal .box{width:100%;max-width:420px;background:var(--surface);border-radius:26px;padding:22px;box-shadow:var(--shadow);animation:up .25s}
+.modal h3{margin:0 0 6px;font-size:20px;letter-spacing:-.02em}
+.modal p{margin:0 0 18px;color:var(--muted);line-height:1.5}
+.modal .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal .row button{height:50px;border-radius:16px;font-weight:700;font-size:16px;background:var(--soft)}
+.modal .row .del{background:#D93A2B;color:#fff}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="sheet"></div>
+<input type="file" id="importFile" accept="application/json,.json" class="hidden">
+
+<script>
+"use strict";
+const VERSION = "1.0";
+const CATS = [
+  {id:"sauce",   label:"Sauces",        one:"Sauce",        c:"var(--sauce)"},
+  {id:"plat",    label:"Plats",         one:"Plat",         c:"var(--plat)"},
+  {id:"dessert", label:"Desserts",      one:"Dessert",      c:"var(--dessert)"},
+  {id:"amuse",   label:"Amuse-bouches", one:"Amuse-bouche", c:"var(--amuse)"}
+];
+const catOf = id => CATS.find(c => c.id === id) || CATS[1];
+const DEFAULT_MODEL = "gemini-flash-latest";
+
+/* ---------------- icons ---------------- */
+const I = {
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+  close:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+  flame:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1 4 5 5.5 5 11a5 5 0 0 1-10 0c0-3 1.5-4.5 2.5-6 .5 2 1.5 3 2.5 3 0-3-1-5 0-8z"/></svg>',
+  chev:'<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>',
+  spark:'<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg>'
+};
+
+/* ---------------- utils ---------------- */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+function ytId(url){
+  if(!url) return null;
+  const m = String(url).match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+const thumbUrl = id => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+function askConfirm(title, msg, okLabel){
+  return new Promise(res => {
+    const m = document.createElement("div"); m.className = "modal";
+    m.innerHTML = `<div class="box"><h3>${esc(title)}</h3><p>${esc(msg)}</p><div class="row"><button data-x="0">Annuler</button><button class="del" data-x="1">${esc(okLabel)}</button></div></div>`;
+    m.addEventListener("click", e => {
+      const b = e.target.closest("[data-x]");
+      if(b || e.target === m){ e.stopPropagation(); m.remove(); res(!!(b && b.dataset.x === "1")); }
+    });
+    document.body.appendChild(m);
+  });
+}
+function toast(msg){
+  const t = document.createElement("div"); t.className = "toast"; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 2400);
+}
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : v; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+};
+
+/* ---------------- database (IndexedDB, repli mémoire) ---------------- */
+const DB = (() => {
+  let db = null, mem = new Map();
+  const open = () => new Promise(res => {
+    try{
+      const r = indexedDB.open("lecuisto", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("recipes", {keyPath:"id"});
+      r.onsuccess = () => { db = r.result; res(); };
+      r.onerror = () => res();
+    }catch(e){ res(); }
+  });
+  const tx = (mode, fn) => new Promise((res, rej) => {
+    const t = db.transaction("recipes", mode); const s = t.objectStore("recipes");
+    const out = fn(s); t.oncomplete = () => res(out && out.result); t.onerror = () => rej(t.error);
+  });
+  return {
+    open,
+    async all(){ if(!db) return [...mem.values()]; return await tx("readonly", s => s.getAll()) || []; },
+    async put(r){ if(!db){ mem.set(r.id, r); return; } await tx("readwrite", s => s.put(r)); },
+    async del(id){ if(!db){ mem.delete(id); return; } await tx("readwrite", s => s.delete(id)); }
+  };
+})();
+
+/* ---------------- state ---------------- */
+const S = { recipes:[], q:"", cat:"all", wake:null };
+
+const SAMPLES = [
+  {nom:"Sauce vierge minute", categorie:"sauce", portions:"4 pers.", duree:"10 min",
+   ingredients:[{quantite:"3",nom:"tomates bien mûres"},{quantite:"1",nom:"échalote"},{quantite:"½ botte",nom:"basilic"},{quantite:"80 ml",nom:"huile d'olive"},{quantite:"1 c. à s.",nom:"jus de citron"},{quantite:"",nom:"sel, poivre"}],
+   etapes:["Monder et épépiner les tomates, puis les tailler en petits dés.","Ciseler finement l'échalote et le basilic.","Mélanger le tout avec l'huile et le citron, assaisonner.","Laisser reposer 5 minutes et servir tiède sur un poisson."]},
+  {nom:"Risotto aux champignons", categorie:"plat", portions:"4 pers.", duree:"35 min",
+   ingredients:[{quantite:"300 g",nom:"riz arborio"},{quantite:"400 g",nom:"champignons de Paris"},{quantite:"1 l",nom:"bouillon de volaille chaud"},{quantite:"10 cl",nom:"vin blanc sec"},{quantite:"60 g",nom:"parmesan râpé"},{quantite:"40 g",nom:"beurre"},{quantite:"1",nom:"oignon"}],
+   etapes:["Faire revenir l'oignon ciselé dans un peu de beurre.","Ajouter le riz et le nacrer 2 minutes, puis déglacer au vin blanc.","Verser le bouillon louche par louche en remuant, environ 18 minutes.","Poêler les champignons à part et les incorporer.","Hors du feu, ajouter le beurre restant et le parmesan."]},
+  {nom:"Mousse au chocolat noir", categorie:"dessert", portions:"6 pers.", duree:"20 min + 3 h",
+   ingredients:[{quantite:"200 g",nom:"chocolat noir 70 %"},{quantite:"6",nom:"œufs"},{quantite:"1 pincée",nom:"sel"},{quantite:"30 g",nom:"sucre"}],
+   etapes:["Faire fondre le chocolat au bain-marie.","Séparer les blancs des jaunes, mélanger les jaunes au chocolat tiédi.","Monter les blancs en neige avec le sel, serrer avec le sucre.","Incorporer délicatement les blancs en trois fois.","Réserver au frais au moins 3 heures."]},
+  {nom:"Gougères au comté", categorie:"amuse", portions:"30 pièces", duree:"45 min",
+   ingredients:[{quantite:"25 cl",nom:"eau"},{quantite:"100 g",nom:"beurre"},{quantite:"150 g",nom:"farine"},{quantite:"4",nom:"œufs"},{quantite:"120 g",nom:"comté râpé"}],
+   etapes:["Porter l'eau et le beurre à ébullition, ajouter la farine d'un coup.","Dessécher la pâte 2 minutes sur le feu.","Hors du feu, incorporer les œufs un à un puis le comté.","Pocher des petites boules et cuire 20 minutes à 190 °C."]}
+];
+
+/* ---------------- list view ---------------- */
+function filtered(){
+  const q = S.q.trim().toLowerCase();
+  return S.recipes
+    .filter(r => S.cat === "all" || r.categorie === S.cat)
+    .filter(r => !q || r.nom.toLowerCase().includes(q) || (r.ingredients||[]).some(i => (i.nom||"").toLowerCase().includes(q)))
+    .sort((a, b) => (b.cree||0) - (a.cree||0));
+}
+function thumbHTML(r, big){
+  const c = catOf(r.categorie), id = ytId(r.url);
+  const ph = `<div class="ph" style="--c:${c.c}">${esc((r.nom||"?").trim().charAt(0).toUpperCase())}</div>`;
+  if(!id) return ph;
+  return ph + `<img loading="lazy" alt="" src="${thumbUrl(id)}" onerror="this.remove()">`;
+}
+function renderList(onlyBody){
+  const list = filtered();
+  const count = id => S.recipes.filter(r => id === "all" || r.categorie === id).length;
+  const chips = [{id:"all", label:"Toutes", c:"var(--ink)"}, ...CATS].map(c =>
+    `<button class="chip ${S.cat===c.id?"on":""}" data-act="cat" data-id="${c.id}" style="--c:${c.c}">${c.id!=="all"?"<i></i>":""}${esc(c.label)} <b>${count(c.id)}</b></button>`).join("");
+  let content;
+  if(!S.recipes.length){
+    content = `<div class="empty"><div class="big">Carnet vide.</div><p>Colle le lien d'une vidéo YouTube de recette : Gemini s'occupe du transcript et de la fiche.</p></div>`;
+  }else if(!list.length){
+    content = `<div class="empty"><div class="big">Rien ici.</div><p>Aucune recette ne correspond à ta recherche.</p></div>`;
+  }else{
+    content = `<div class="grid">${list.map(r => {
+      const c = catOf(r.categorie);
+      return `<button class="card" data-act="open" data-id="${r.id}">
+        <div class="thumb">${thumbHTML(r)}<span class="tag" style="--c:${c.c}"><i></i>${esc(c.one)}</span></div>
+        <div class="meta"><h3>${esc(r.nom)}</h3><p>${(r.ingredients||[]).length} ingrédients${r.duree?" · "+esc(r.duree):""}</p></div>
+      </button>`;}).join("")}</div>`;
+  }
+  const bodyHTML = `<nav class="chips">${chips}</nav>${content}`;
+  if(onlyBody && document.getElementById("listbody")){ document.getElementById("listbody").innerHTML = bodyHTML; return; }
+  document.getElementById("app").innerHTML = `
+  <div class="wrap">
+    <header class="top">
+      <div class="brand"><small id="cnt">${S.recipes.length} recette${S.recipes.length>1?"s":""}</small><h1>Le Cuisto<span>.</span></h1></div>
+      <button class="iconbtn" data-act="settings" aria-label="Réglages">${I.gear}</button>
+    </header>
+    <div class="search">${I.search}<input id="q" type="search" placeholder="Nom ou ingrédient…" value="${esc(S.q)}" autocomplete="off"></div>
+    <div id="listbody">${bodyHTML}</div>
+  </div>
+  <button class="fab" data-act="add">${I.plus} Recette</button>`;
+  document.getElementById("q").addEventListener("input", e => { S.q = e.target.value; renderList(true); });
+}
+
+/* ---------------- sheets ---------------- */
+function openSheet(html){ const s = document.getElementById("sheet"); s.innerHTML = `<div class="sheet">${html}</div>`; document.body.style.overflow = "hidden"; }
+function closeSheet(){ document.getElementById("sheet").innerHTML = ""; document.body.style.overflow = ""; stopCook(); }
+
+/* detail */
+function renderDetail(id){
+  const r = S.recipes.find(x => x.id === id); if(!r) return closeSheet();
+  const c = catOf(r.categorie), vid = ytId(r.url);
+  const cooking = document.body.classList.contains("cook");
+  openSheet(`
+    <div class="bar">
+      <button class="pill" data-act="close">${I.back} Retour</button>
+      <div style="display:flex;gap:8px">
+        <button class="pill ${cooking?"accent":""}" data-act="cook" data-id="${r.id}">${I.flame} ${cooking?"En cuisine":"Cuisiner"}</button>
+        <button class="pill" data-act="edit" data-id="${r.id}">Modifier</button>
+      </div>
+    </div>
+    <div class="body">
+      <div class="hero">${thumbHTML(r, true)}${vid?`<a class="play" href="${esc(r.url)}" target="_blank" rel="noopener">${I.play} Vidéo</a>`:""}</div>
+      <h1 class="d-title">${esc(r.nom)}</h1>
+      <div class="facts">
+        <span class="fact" style="--c:${c.c}"><i></i>${esc(c.one)}</span>
+        ${r.portions?`<span class="fact">${esc(r.portions)}</span>`:""}
+        ${r.duree?`<span class="fact">${esc(r.duree)}</span>`:""}
+        ${r.exemple?`<span class="fact">Exemple</span>`:""}
+      </div>
+      <section class="sec"><h2>Ingrédients <span>${(r.ingredients||[]).length}</span></h2>
+        <ul class="ing">${(r.ingredients||[]).map(i => `<li data-act="tick"><span class="box"></span><span>${i.quantite?`<span class="q">${esc(i.quantite)}</span>`:""}${esc(i.nom)}</span></li>`).join("")}</ul>
+      </section>
+      <section class="sec"><h2>Étapes</h2>
+        <ol class="steps">${(r.etapes||[]).map(e => `<li><span>${esc(e)}</span></li>`).join("")}</ol>
+      </section>
+      ${r.transcript?`<section class="sec"><details class="tr"><summary>Transcript de la vidéo ${I.chev}</summary><div class="trtext">${esc(r.transcript)}</div></details></section>`:""}
+      <button class="danger" data-act="delete" data-id="${r.id}">Supprimer la recette</button>
+    </div>`);
+}
+
+/* cook mode */
+async function toggleCook(id){
+  if(document.body.classList.contains("cook")){ stopCook(); }
+  else{
+    document.body.classList.add("cook");
+    try{ if("wakeLock" in navigator) S.wake = await navigator.wakeLock.request("screen"); }catch(e){}
+    toast("Mode cuisine : l'écran reste allumé");
+  }
+  const sc = document.querySelector(".sheet")?.scrollTop || 0;
+  renderDetail(id);
+  const sh = document.querySelector(".sheet"); if(sh) sh.scrollTop = sc;
+}
+function stopCook(){ document.body.classList.remove("cook"); try{ S.wake && S.wake.release(); }catch(e){} S.wake = null; }
+document.addEventListener("visibilitychange", async () => {
+  if(document.visibilityState === "visible" && document.body.classList.contains("cook") && "wakeLock" in navigator){
+    try{ S.wake = await navigator.wakeLock.request("screen"); }catch(e){}
+  }
+});
+
+/* add (via Gemini) */
+function renderAdd(prefill, state){
+  const key = store.get("gemini_key", "");
+  let inner;
+  if(state && state.loading){
+    inner = `<div class="loader"><div class="pot"></div><h3>Gemini regarde la vidéo…</h3><p>Transcript, ingrédients et étapes.<br>Ça prend en général 20 à 60 secondes.</p></div>`;
+  }else{
+    inner = `
+      <h1 class="add-hero">Nouvelle recette</h1>
+      <p class="add-sub">Colle le lien YouTube. Le transcript et la fiche sont générés automatiquement, tu pourras tout relire avant d'enregistrer.</p>
+      ${!key?`<div class="notice info">Ajoute d'abord ta clé Gemini gratuite dans les <a href="#" data-act="settings">réglages</a>. En attendant, tu peux saisir une recette à la main.</div>`:""}
+      <div class="field"><label>Lien YouTube</label>
+        <div class="urlrow"><input id="url" type="url" inputmode="url" placeholder="https://youtu.be/…" value="${esc(prefill||"")}" autocomplete="off"><button data-act="paste">Coller</button></div>
+      </div>
+      ${state && state.error ? `<div class="notice err"><b>${esc(state.error.title)}</b>${esc(state.error.msg)}</div>` : ""}
+      <button class="big-cta" data-act="generate" ${key?"":"disabled"}>${I.spark} Créer la fiche</button>
+      <button class="ghost-cta" data-act="manual">Saisir à la main</button>`;
+  }
+  openSheet(`<div class="bar"><button class="pill" data-act="close">${I.close} Fermer</button><span></span></div><div class="body">${inner}</div>`);
+}
+
+const PROMPT = `Tu es l'assistant culinaire de l'application « Le Cuisto ». Regarde et écoute attentivement cette vidéo YouTube.
+Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour.
+
+Si la vidéo n'est pas une recette de cuisine, réponds :
+{"est_recette": false, "raison": "explication courte en français"}
+
+Sinon, réponds avec :
+{
+ "est_recette": true,
+ "nom": "nom court et appétissant du plat, en français",
+ "categorie": "une valeur parmi : sauce, plat, dessert, amuse",
+ "portions": "ex. 4 pers. (vide si inconnu)",
+ "duree": "durée totale estimée, ex. 45 min (vide si inconnu)",
+ "ingredients": [{"quantite": "ex. 200 g", "nom": "ex. farine"}],
+ "etapes": ["3 à 8 étapes courtes et claires, en français"],
+ "transcript": "transcription fidèle et complète de ce qui est dit dans la vidéo, en français (traduis si la vidéo est dans une autre langue)"
+}
+Règles : unités métriques, quantités telles que données dans la vidéo, catégorie "amuse" pour les amuse-bouches, apéritifs et entrées à picorer.`;
+
+async function generate(){
+  const url = (document.getElementById("url")?.value || "").trim();
+  const id = ytId(url);
+  if(!id) return renderAdd(url, {error:{title:"Lien non reconnu", msg:"Vérifie qu'il s'agit bien d'un lien YouTube (vidéo ou Short)."}});
+  const key = store.get("gemini_key", ""), model = store.get("gemini_model", DEFAULT_MODEL) || DEFAULT_MODEL;
+  const clean = `https://www.youtube.com/watch?v=${id}`;
+  renderAdd(url, {loading:true});
+  let res, data;
+  try{
+    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+      method:"POST",
+      headers:{"Content-Type":"application/json", "x-goog-api-key":key},
+      body:JSON.stringify({
+        contents:[{parts:[{file_data:{file_uri:clean}}, {text:PROMPT}]}],
+        generationConfig:{responseMimeType:"application/json", temperature:0.3}
+      })
+    });
+    data = await res.json().catch(() => ({}));
+  }catch(e){
+    return renderAdd(url, {error:{title:"Pas de connexion", msg:"Impossible de joindre Gemini. Vérifie ta connexion, ou saisis la recette à la main."}});
+  }
+  if(!res.ok){
+    const m = (data && data.error && data.error.message) || "";
+    let err = {title:"Gemini n'a pas pu traiter la vidéo", msg:m || ("Erreur " + res.status)};
+    if(res.status === 400 && /api key/i.test(m)) err = {title:"Clé API invalide", msg:"Vérifie ta clé Gemini dans les réglages."};
+    else if(res.status === 401 || res.status === 403) err = {title:"Clé API refusée", msg:"Vérifie ta clé Gemini dans les réglages."};
+    else if(res.status === 429) err = {title:"Quota gratuit atteint", msg:"Réessaie dans quelques minutes (ou demain), ou saisis la recette à la main."};
+    else if(res.status === 404) err = {title:"Modèle introuvable", msg:`Le modèle « ${model} » n'existe pas ou plus. Change-le dans les réglages.`};
+    else if(res.status === 400) err = {title:"Vidéo inaccessible", msg:"La vidéo est peut-être privée, non répertoriée ou trop longue. Tu peux saisir la recette à la main."};
+    return renderAdd(url, {error:err});
+  }
+  let txt = "";
+  try{ txt = data.candidates[0].content.parts.map(p => p.text || "").join(""); }catch(e){}
+  let j = null;
+  try{ j = JSON.parse(txt.replace(/^```(?:json)?\s*|\s*```$/g, "")); }catch(e){
+    const m = txt.match(/\{[\s\S]*\}/); if(m){ try{ j = JSON.parse(m[0]); }catch(e2){} }
+  }
+  if(!j) return renderAdd(url, {error:{title:"Réponse illisible", msg:"Gemini a répondu dans un format inattendu. Réessaie, ou saisis la recette à la main."}});
+  if(j.est_recette === false) return renderAdd(url, {error:{title:"Ce n'est pas une recette", msg:(j.raison || "Cette vidéo ne semble pas contenir de recette.") + " Tu peux quand même la saisir à la main."}});
+  const r = {
+    id:uid(), cree:Date.now(), url:clean, source:"gemini",
+    nom:String(j.nom || "Recette sans nom"),
+    categorie:CATS.some(c => c.id === j.categorie) ? j.categorie : "plat",
+    portions:String(j.portions || ""), duree:String(j.duree || ""),
+    ingredients:Array.isArray(j.ingredients) ? j.ingredients.map(i => typeof i === "string" ? {quantite:"", nom:i} : {quantite:String(i.quantite||""), nom:String(i.nom||"")}) : [],
+    etapes:Array.isArray(j.etapes) ? j.etapes.map(String) : [],
+    transcript:String(j.transcript || "")
+  };
+  renderEdit(r, true);
+}
+
+/* edit / manual form */
+function ingToText(list){ return (list||[]).map(i => (i.quantite ? i.quantite + " — " : "") + i.nom).join("\n"); }
+function textToIng(t){
+  return t.split("\n").map(l => l.trim()).filter(Boolean).map(l => {
+    const m = l.match(/^(.+?)\s+[—–-]\s+(.+)$/);
+    return m ? {quantite:m[1].trim(), nom:m[2].trim()} : {quantite:"", nom:l};
+  });
+}
+let EDIT = null;
+function renderEdit(r, isNew){
+  EDIT = {r, isNew};
+  openSheet(`
+    <div class="bar"><button class="pill" data-act="${isNew?"close":"back-detail"}">${I.close} Annuler</button><span class="t">${isNew?"Vérifier la fiche":"Modifier"}</span><button class="pill dark" data-act="save">Enregistrer</button></div>
+    <div class="body">
+      ${isNew && r.source==="gemini" ? `<div class="notice info" style="margin-top:4px">Fiche générée par Gemini. Relis-la et corrige si besoin.</div>` : ""}
+      <div class="field"><label>Nom</label><input id="f-nom" value="${esc(r.nom)}" placeholder="Ex. Tarte tatin"></div>
+      <div class="field"><label>Catégorie</label><div class="seg">${CATS.map(c => `<button data-act="pickcat" data-id="${c.id}" class="${r.categorie===c.id?"on":""}" style="--c:${c.c}"><i></i>${esc(c.one)}</button>`).join("")}</div></div>
+      <div class="field" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label>Portions</label><input id="f-por" value="${esc(r.portions)}" placeholder="4 pers."></div>
+        <div><label>Durée</label><input id="f-dur" value="${esc(r.duree)}" placeholder="45 min"></div>
+      </div>
+      <div class="field"><label>Ingrédients</label><textarea id="f-ing" placeholder="200 g — farine&#10;3 — œufs">${esc(ingToText(r.ingredients))}</textarea><p class="hint">Un ingrédient par ligne. Pour séparer la quantité : « 200 g — farine ».</p></div>
+      <div class="field"><label>Étapes</label><textarea id="f-eta" placeholder="Une étape par ligne">${esc((r.etapes||[]).join("\n"))}</textarea></div>
+      <div class="field"><label>Lien YouTube</label><input id="f-url" type="url" value="${esc(r.url)}" placeholder="https://youtu.be/…"></div>
+      <div class="field"><label>Transcript</label><textarea id="f-tr" placeholder="Optionnel">${esc(r.transcript)}</textarea></div>
+    </div>`);
+}
+async function saveEdit(){
+  const r = EDIT.r, v = id => document.getElementById(id).value.trim();
+  r.nom = v("f-nom") || "Recette sans nom";
+  r.portions = v("f-por"); r.duree = v("f-dur");
+  r.ingredients = textToIng(document.getElementById("f-ing").value);
+  r.etapes = document.getElementById("f-eta").value.split("\n").map(s => s.trim()).filter(Boolean);
+  r.url = v("f-url"); r.transcript = document.getElementById("f-tr").value.trim();
+  r.modifie = Date.now(); if(!r.cree) r.cree = Date.now();
+  await DB.put(r);
+  await reload();
+  toast(EDIT.isNew ? "Recette ajoutée" : "Recette mise à jour");
+  renderDetail(r.id);
+}
+
+/* settings */
+function renderSettings(){
+  openSheet(`
+    <div class="bar"><button class="pill" data-act="close">${I.back} Retour</button><span class="t">Réglages</span><button class="pill dark" data-act="save-settings">OK</button></div>
+    <div class="body">
+      <section class="sec"><h2>Gemini</h2>
+        <div class="field"><label>Clé API</label><input id="s-key" type="password" autocomplete="off" value="${esc(store.get("gemini_key",""))}" placeholder="AIza…">
+        <p class="hint">Gratuite sur aistudio.google.com → « Get API key ». Elle reste uniquement sur ce téléphone.</p></div>
+        <div class="field" style="margin-bottom:0"><label>Modèle</label><input id="s-model" value="${esc(store.get("gemini_model", DEFAULT_MODEL))}" autocapitalize="off" autocorrect="off">
+        <p class="hint">Par défaut : ${DEFAULT_MODEL} (toujours le dernier modèle Flash).</p></div>
+      </section>
+      <section class="sec"><h2>Sauvegarde</h2>
+        <div class="set-row"><span>Exporter toutes les recettes</span><button class="pill" data-act="export">Exporter</button></div>
+        <div class="set-row"><span>Restaurer une sauvegarde</span><button class="pill" data-act="import">Importer</button></div>
+        <p class="hint" style="color:var(--muted);font-size:13px;line-height:1.45;margin:10px 0 0">Après « Exporter », choisis « Enregistrer dans Fichiers » puis ton dossier Google Drive.</p>
+      </section>
+      ${S.recipes.some(r => r.exemple) ? `<section class="sec"><h2>Exemples</h2><div class="set-row"><span>Retirer les 4 recettes d'exemple</span><button class="pill" data-act="clear-samples">Retirer</button></div></section>` : ""}
+      <p class="ver">Le Cuisto · v${VERSION}</p>
+    </div>`);
+}
+
+/* export / import */
+async function doExport(){
+  const payload = JSON.stringify({app:"Le Cuisto", version:VERSION, exporte:new Date().toISOString(), recettes:S.recipes}, null, 2);
+  const name = `le-cuisto-${new Date().toISOString().slice(0,10)}.json`;
+  try{
+    const file = new File([payload], name, {type:"application/json"});
+    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:"Sauvegarde Le Cuisto"}); return; }
+  }catch(e){ if(e && e.name === "AbortError") return; }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([payload], {type:"application/json"})); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+document.getElementById("importFile").addEventListener("change", async e => {
+  const f = e.target.files[0]; if(!f) return;
+  try{
+    const j = JSON.parse(await f.text());
+    const list = Array.isArray(j) ? j : (j.recettes || []);
+    let n = 0; for(const r of list){ if(r && r.nom){ r.id = r.id || uid(); await DB.put(r); n++; } }
+    await reload(); closeSheet(); toast(`${n} recette${n>1?"s":""} importée${n>1?"s":""}`);
+  }catch(err){ toast("Fichier de sauvegarde invalide"); }
+  e.target.value = "";
+});
+
+/* ---------------- events ---------------- */
+document.addEventListener("click", async e => {
+  const el = e.target.closest("[data-act]"); if(!el) return;
+  const a = el.dataset.act, id = el.dataset.id;
+  if(el.tagName === "A" && a) e.preventDefault();
+  switch(a){
+    case "cat": S.cat = id; renderList(true); break;
+    case "open": renderDetail(id); break;
+    case "close": closeSheet(); break;
+    case "add": renderAdd(""); break;
+    case "settings": renderSettings(); break;
+    case "paste":
+      try{ const t = await navigator.clipboard.readText(); document.getElementById("url").value = t.trim(); }
+      catch(err){ toast("Appui long dans le champ → Coller"); }
+      break;
+    case "generate": generate(); break;
+    case "manual": {
+      const u = (document.getElementById("url")?.value || "").trim();
+      renderEdit({id:uid(), cree:Date.now(), url:u, source:"manuel", nom:"", categorie:"plat", portions:"", duree:"", ingredients:[], etapes:[], transcript:""}, true);
+      break;
+    }
+    case "pickcat":
+      EDIT.r.categorie = id;
+      document.querySelectorAll(".seg button").forEach(b => b.classList.toggle("on", b.dataset.id === id));
+      break;
+    case "save": saveEdit(); break;
+    case "edit": { const r = S.recipes.find(x => x.id === id); stopCook(); renderEdit(JSON.parse(JSON.stringify(r)), false); break; }
+    case "back-detail": renderDetail(EDIT.r.id); break;
+    case "tick": el.classList.toggle("done"); break;
+    case "cook": toggleCook(id); break;
+    case "delete":
+      if(await askConfirm("Supprimer cette recette ?", "Elle sera définitivement effacée de ce téléphone.", "Supprimer")){ await DB.del(id); await reload(); closeSheet(); toast("Recette supprimée"); }
+      break;
+    case "save-settings":
+      store.set("gemini_key", document.getElementById("s-key").value.trim());
+      store.set("gemini_model", document.getElementById("s-model").value.trim() || DEFAULT_MODEL);
+      closeSheet(); toast("Réglages enregistrés"); break;
+    case "export": doExport(); break;
+    case "import": document.getElementById("importFile").click(); break;
+    case "clear-samples":
+      for(const r of S.recipes.filter(r => r.exemple)) await DB.del(r.id);
+      await reload(); renderSettings(); toast("Exemples retirés"); break;
+  }
+});
+
+/* ---------------- boot ---------------- */
+async function reload(){ S.recipes = await DB.all(); renderList(); }
+(async function boot(){
+  await DB.open();
+  S.recipes = await DB.all();
+  if(!S.recipes.length && store.get("samples_done","") !== "1"){
+    const t = Date.now();
+    for(const [i, s] of SAMPLES.entries()) await DB.put({...s, id:uid(), cree:t - i*1000, url:"", transcript:"", exemple:true, source:"exemple"});
+    store.set("samples_done","1");
+    S.recipes = await DB.all();
+  }
+  renderList();
+  // ?url=… ouvre directement l'ajout (utile avec un Raccourci iOS)
+  const p = new URLSearchParams(location.search).get("url");
+  if(p){ renderAdd(p); history.replaceState(null, "", location.pathname); }
+  if("serviceWorker" in navigator && location.protocol === "https:"){
+    try{ navigator.serviceWorker.register("sw.js").catch(() => {}); }catch(e){}
+  }
+})();
+</script>
+</body>
+</html>
