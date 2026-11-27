@@ -1,5 +1,5 @@
-// Le Cuisto — service worker v1.0
-const CACHE = "lecuisto-v1.0";
+// Le Cuisto — service worker v1.1
+const CACHE = "lecuisto-v1.1";
 const SHELL = ["./", "index.html", "manifest.json", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 
 self.addEventListener("install", e => {

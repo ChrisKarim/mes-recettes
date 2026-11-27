@@ -1,4 +1,4 @@
-# Le Cuisto — v1.0
+# Le Cuisto — v1.1
 
 Mon carnet de recettes personnel : je colle un lien YouTube, Gemini génère le transcript et la fiche recette (nom, catégorie, ingrédients, étapes).
 
@@ -34,4 +34,5 @@ Un Raccourci iOS « Ouvrir l'URL » branché sur la feuille de partage de YouTub
 
 ## Versions
 
+- **1.1** — corrections : clé Gemini enregistrée dès qu'on la colle, bouton « Créer la fiche » jamais grisé, bouton « Coller » plus fiable, stockage permanent demandé à l'iPhone, avertissement Safari / navigation privée, rappel de sauvegarde toutes les 5 recettes.
 - **1.0** — première version : ajout via Gemini, saisie manuelle, catégories, recherche, mode cuisine, export/import.

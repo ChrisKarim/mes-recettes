@@ -163,6 +163,12 @@ body.cook .steps li{grid-template-columns:42px 1fr}
 .ver{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center;margin-top:24px}
 .toast{position:fixed;left:50%;bottom:calc(var(--bot) + 96px);transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:999px;font-weight:600;font-size:14px;z-index:50;animation:up .25s;white-space:nowrap}
 .hidden{display:none!important}
+.banner{border-radius:var(--r);padding:15px 16px;margin:0 0 16px;font-size:14px;line-height:1.5}
+.banner b{display:block;font-size:15px;margin-bottom:3px}
+.banner button{display:flex;width:fit-content;align-items:center;height:38px;padding:0 15px;margin-top:10px;border-radius:999px;font-weight:700;font-size:14px;background:var(--ink);color:var(--bg)}
+.banner.warn{background:color-mix(in srgb,var(--sauce) 16%,var(--surface));border:1px solid color-mix(in srgb,var(--sauce) 45%,transparent)}
+.banner.info{background:color-mix(in srgb,var(--plat) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--plat) 40%,transparent)}
+.saved-ok{color:var(--plat);font-weight:700}
 .modal{position:fixed;inset:0;z-index:60;background:rgba(10,10,8,.45);display:flex;align-items:flex-end;justify-content:center;padding:16px 16px calc(var(--bot) + 16px);animation:fade .2s}
 @keyframes fade{from{opacity:0}}
 .modal .box{width:100%;max-width:420px;background:var(--surface);border-radius:26px;padding:22px;box-shadow:var(--shadow);animation:up .25s}
@@ -180,7 +186,7 @@ body.cook .steps li{grid-template-columns:42px 1fr}
 
 <script>
 "use strict";
-const VERSION = "1.0";
+const VERSION = "1.1";
 const CATS = [
   {id:"sauce",   label:"Sauces",        one:"Sauce",        c:"var(--sauce)"},
   {id:"plat",    label:"Plats",         one:"Plat",         c:"var(--plat)"},
@@ -249,6 +255,7 @@ const DB = (() => {
   });
   return {
     open,
+    isMemory(){ return !db; },
     async all(){ if(!db) return [...mem.values()]; return await tx("readonly", s => s.getAll()) || []; },
     async put(r){ if(!db){ mem.set(r.id, r); return; } await tx("readwrite", s => s.put(r)); },
     async del(id){ if(!db){ mem.delete(id); return; } await tx("readwrite", s => s.delete(id)); }
@@ -256,7 +263,35 @@ const DB = (() => {
 })();
 
 /* ---------------- state ---------------- */
-const S = { recipes:[], q:"", cat:"all", wake:null };
+const S = { recipes:[], q:"", cat:"all", wake:null, persisted:null, bannerHidden:false };
+
+/* ---------------- environnement iPhone (v1.1) ---------------- */
+const isStandalone = () => window.navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const storageOK = (() => { try{ localStorage.setItem("__t","1"); localStorage.removeItem("__t"); return true; }catch(e){ return false; } })();
+async function askPersist(){
+  try{
+    if(navigator.storage && navigator.storage.persist){
+      S.persisted = await navigator.storage.persisted();
+      if(!S.persisted) S.persisted = await navigator.storage.persist();
+    }
+  }catch(e){}
+}
+const BACKUP_EVERY = 5;
+const sinceExport = () => parseInt(store.get("since_export","0"), 10) || 0;
+function bannerHTML(){
+  if(DB.isMemory() || !storageOK){
+    return `<div class="banner warn"><b>Rien ne sera conservé</b>Ce navigateur bloque l'enregistrement (navigation privée ?). Ouvre Le Cuisto dans un onglet normal ou depuis l'icône de l'écran d'accueil.</div>`;
+  }
+  if(isIOS() && !isStandalone() && !S.bannerHidden){
+    return `<div class="banner warn"><b>Tu es dans Safari</b>Sur iPhone, Safari et l'icône de l'écran d'accueil ont chacun leur propre mémoire : une recette ajoutée ici n'apparaîtra pas dans l'app. Bouton Partager → « Sur l'écran d'accueil », puis ouvre toujours Le Cuisto depuis l'icône.<button data-act="hide-banner">Compris</button></div>`;
+  }
+  const n = sinceExport();
+  if(n >= BACKUP_EVERY){
+    return `<div class="banner info"><b>${n} nouvelles recettes depuis ta dernière sauvegarde</b>Exporte ton carnet vers Google Drive pour ne rien perdre.<button data-act="export">Exporter maintenant</button></div>`;
+  }
+  return "";
+}
 
 const SAMPLES = [
   {nom:"Sauce vierge minute", categorie:"sauce", portions:"4 pers.", duree:"10 min",
@@ -313,6 +348,7 @@ function renderList(onlyBody){
       <div class="brand"><small id="cnt">${S.recipes.length} recette${S.recipes.length>1?"s":""}</small><h1>Le Cuisto<span>.</span></h1></div>
       <button class="iconbtn" data-act="settings" aria-label="Réglages">${I.gear}</button>
     </header>
+    ${bannerHTML()}
     <div class="search">${I.search}<input id="q" type="search" placeholder="Nom ou ingrédient…" value="${esc(S.q)}" autocomplete="off"></div>
     <div id="listbody">${bodyHTML}</div>
   </div>
@@ -386,12 +422,12 @@ function renderAdd(prefill, state){
     inner = `
       <h1 class="add-hero">Nouvelle recette</h1>
       <p class="add-sub">Colle le lien YouTube. Le transcript et la fiche sont générés automatiquement, tu pourras tout relire avant d'enregistrer.</p>
-      ${!key?`<div class="notice info">Ajoute d'abord ta clé Gemini gratuite dans les <a href="#" data-act="settings">réglages</a>. En attendant, tu peux saisir une recette à la main.</div>`:""}
+      ${!key?`<div class="notice info">Aucune clé Gemini enregistrée pour l'instant. « Créer la fiche » t'emmènera aux réglages pour l'ajouter. Tu peux aussi saisir la recette à la main.</div>`:""}
       <div class="field"><label>Lien YouTube</label>
         <div class="urlrow"><input id="url" type="url" inputmode="url" placeholder="https://youtu.be/…" value="${esc(prefill||"")}" autocomplete="off"><button data-act="paste">Coller</button></div>
       </div>
       ${state && state.error ? `<div class="notice err"><b>${esc(state.error.title)}</b>${esc(state.error.msg)}</div>` : ""}
-      <button class="big-cta" data-act="generate" ${key?"":"disabled"}>${I.spark} Créer la fiche</button>
+      <button class="big-cta" data-act="generate">${I.spark} Créer la fiche</button>
       <button class="ghost-cta" data-act="manual">Saisir à la main</button>`;
   }
   openSheet(`<div class="bar"><button class="pill" data-act="close">${I.close} Fermer</button><span></span></div><div class="body">${inner}</div>`);
@@ -421,6 +457,7 @@ async function generate(){
   const id = ytId(url);
   if(!id) return renderAdd(url, {error:{title:"Lien non reconnu", msg:"Vérifie qu'il s'agit bien d'un lien YouTube (vidéo ou Short)."}});
   const key = store.get("gemini_key", ""), model = store.get("gemini_model", DEFAULT_MODEL) || DEFAULT_MODEL;
+  if(!key){ S.pendingUrl = url; return renderSettings(true); }
   const clean = `https://www.youtube.com/watch?v=${id}`;
   renderAdd(url, {loading:true});
   let res, data;
@@ -503,19 +540,22 @@ async function saveEdit(){
   r.url = v("f-url"); r.transcript = document.getElementById("f-tr").value.trim();
   r.modifie = Date.now(); if(!r.cree) r.cree = Date.now();
   await DB.put(r);
+  if(EDIT.isNew){ store.set("since_export", String(sinceExport() + 1)); askPersist(); }
   await reload();
   toast(EDIT.isNew ? "Recette ajoutée" : "Recette mise à jour");
   renderDetail(r.id);
 }
 
 /* settings */
-function renderSettings(){
+function renderSettings(needKey){
+  const persistTxt = S.persisted === true ? `<span class="saved-ok">Permanent ✓</span>` : S.persisted === false ? "Non garanti" : "—";
   openSheet(`
-    <div class="bar"><button class="pill" data-act="close">${I.back} Retour</button><span class="t">Réglages</span><button class="pill dark" data-act="save-settings">OK</button></div>
+    <div class="bar"><button class="pill" data-act="save-settings">${I.back} Retour</button><span class="t">Réglages</span><button class="pill dark" data-act="save-settings">OK</button></div>
     <div class="body">
+      ${needKey ? `<div class="notice info" style="margin-top:4px">Pour créer une fiche automatiquement, colle ici ta clé Gemini gratuite. Elle est enregistrée dès que tu la colles, puis tu reviens directement à ta recette.</div>` : ""}
       <section class="sec"><h2>Gemini</h2>
-        <div class="field"><label>Clé API</label><input id="s-key" type="password" autocomplete="off" value="${esc(store.get("gemini_key",""))}" placeholder="AIza…">
-        <p class="hint">Gratuite sur aistudio.google.com → « Get API key ». Elle reste uniquement sur ce téléphone.</p></div>
+        <div class="field"><label>Clé API</label><input id="s-key" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" value="${esc(store.get("gemini_key",""))}" placeholder="AIza…" style="font-family:var(--mono);font-size:15px">
+        <p class="hint" id="key-state">${store.get("gemini_key","") ? `<span class="saved-ok">Clé enregistrée ✓</span>` : "Gratuite sur aistudio.google.com → « Get API key »."} Elle reste uniquement sur ce téléphone.</p></div>
         <div class="field" style="margin-bottom:0"><label>Modèle</label><input id="s-model" value="${esc(store.get("gemini_model", DEFAULT_MODEL))}" autocapitalize="off" autocorrect="off">
         <p class="hint">Par défaut : ${DEFAULT_MODEL} (toujours le dernier modèle Flash).</p></div>
       </section>
@@ -524,9 +564,24 @@ function renderSettings(){
         <div class="set-row"><span>Restaurer une sauvegarde</span><button class="pill" data-act="import">Importer</button></div>
         <p class="hint" style="color:var(--muted);font-size:13px;line-height:1.45;margin:10px 0 0">Après « Exporter », choisis « Enregistrer dans Fichiers » puis ton dossier Google Drive.</p>
       </section>
+      <section class="sec"><h2>Stockage</h2>
+        <div class="set-row"><span>Mode</span><span>${isStandalone() ? "App (écran d'accueil)" : "Navigateur"}</span></div>
+        <div class="set-row"><span>Conservation des données</span><span>${persistTxt}</span></div>
+        <div class="set-row"><span>Nouvelles recettes non sauvegardées</span><span>${sinceExport()}</span></div>
+      </section>
       ${S.recipes.some(r => r.exemple) ? `<section class="sec"><h2>Exemples</h2><div class="set-row"><span>Retirer les 4 recettes d'exemple</span><button class="pill" data-act="clear-samples">Retirer</button></div></section>` : ""}
       <p class="ver">Le Cuisto · v${VERSION}</p>
     </div>`);
+  // v1.1 : enregistrement immédiat, plus besoin d'appuyer sur OK
+  const k = document.getElementById("s-key"), m = document.getElementById("s-model");
+  const saveKey = () => {
+    const v = k.value.replace(/\s+/g, "");
+    store.set("gemini_key", v);
+    document.getElementById("key-state").innerHTML = v ? `<span class="saved-ok">Clé enregistrée ✓</span> Elle reste uniquement sur ce téléphone.` : "Gratuite sur aistudio.google.com → « Get API key ». Elle reste uniquement sur ce téléphone.";
+  };
+  k.addEventListener("input", saveKey); k.addEventListener("change", saveKey); k.addEventListener("blur", saveKey);
+  m.addEventListener("input", () => store.set("gemini_model", m.value.trim() || DEFAULT_MODEL));
+  if(needKey) setTimeout(() => k.focus(), 300);
 }
 
 /* export / import */
@@ -535,11 +590,17 @@ async function doExport(){
   const name = `le-cuisto-${new Date().toISOString().slice(0,10)}.json`;
   try{
     const file = new File([payload], name, {type:"application/json"});
-    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:"Sauvegarde Le Cuisto"}); return; }
+    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:"Sauvegarde Le Cuisto"}); exported(); return; }
   }catch(e){ if(e && e.name === "AbortError") return; }
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([payload], {type:"application/json"})); a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
+  exported();
+}
+function exported(){
+  store.set("since_export", "0"); store.set("last_export", String(Date.now()));
+  toast("Sauvegarde exportée");
+  if(!document.querySelector(".sheet")) renderList();
 }
 document.getElementById("importFile").addEventListener("change", async e => {
   const f = e.target.files[0]; if(!f) return;
@@ -563,10 +624,21 @@ document.addEventListener("click", async e => {
     case "close": closeSheet(); break;
     case "add": renderAdd(""); break;
     case "settings": renderSettings(); break;
-    case "paste":
-      try{ const t = await navigator.clipboard.readText(); document.getElementById("url").value = t.trim(); }
-      catch(err){ toast("Appui long dans le champ → Coller"); }
+    case "paste": {
+      const f = document.getElementById("url");
+      try{
+        if(!navigator.clipboard || !navigator.clipboard.readText) throw new Error("no clipboard");
+        const t = (await navigator.clipboard.readText()) || "";
+        const u = (t.match(/https?:\/\/\S+/) || [t])[0].trim();
+        if(!u) throw new Error("empty");
+        f.value = u;
+        if(!ytId(u)) toast("Ce n'est pas un lien YouTube");
+      }catch(err){
+        f.focus(); f.select && f.select();
+        toast("Appuie longuement dans le champ → « Coller »");
+      }
       break;
+    }
     case "generate": generate(); break;
     case "manual": {
       const u = (document.getElementById("url")?.value || "").trim();
@@ -585,10 +657,15 @@ document.addEventListener("click", async e => {
     case "delete":
       if(await askConfirm("Supprimer cette recette ?", "Elle sera définitivement effacée de ce téléphone.", "Supprimer")){ await DB.del(id); await reload(); closeSheet(); toast("Recette supprimée"); }
       break;
-    case "save-settings":
-      store.set("gemini_key", document.getElementById("s-key").value.trim());
+    case "save-settings": {
+      const k = document.getElementById("s-key").value.replace(/\s+/g, "");
+      store.set("gemini_key", k);
       store.set("gemini_model", document.getElementById("s-model").value.trim() || DEFAULT_MODEL);
-      closeSheet(); toast("Réglages enregistrés"); break;
+      if(S.pendingUrl !== undefined && k){ const u = S.pendingUrl; S.pendingUrl = undefined; renderAdd(u); toast("Clé enregistrée"); }
+      else { S.pendingUrl = undefined; closeSheet(); renderList(); if(k) toast("Réglages enregistrés"); }
+      break;
+    }
+    case "hide-banner": S.bannerHidden = true; renderList(); break;
     case "export": doExport(); break;
     case "import": document.getElementById("importFile").click(); break;
     case "clear-samples":
@@ -601,6 +678,7 @@ document.addEventListener("click", async e => {
 async function reload(){ S.recipes = await DB.all(); renderList(); }
 (async function boot(){
   await DB.open();
+  await askPersist();
   S.recipes = await DB.all();
   if(!S.recipes.length && store.get("samples_done","") !== "1"){
     const t = Date.now();
